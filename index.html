@@ -182,11 +182,29 @@
     }
 
     /* About Section */
-    #about p {
-      font-size: 1.1rem;
-      max-width: 700px;
+    #about {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #about img {
+      max-width: 450px;
+      width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgb(0 0 0 / 0.1);
+      flex: 1 1 40%;
+      object-fit: cover;
+    }
+
+    #about-text {
+      flex: 1 1 50%;
+      font-size: 1.15rem;
       font-weight: 300;
-      line-height: 1.7;
+      line-height: 1.8;
+      color: var(--text-color);
     }
 
     /* Services */
@@ -226,6 +244,16 @@
       font-weight: 300;
       line-height: 1.5;
       font-size: 1rem;
+    }
+
+    /* Service images */
+    .service-img {
+      width: 100%;
+      height: 160px;
+      border-radius: 12px;
+      object-fit: cover;
+      margin-bottom: 1rem;
+      box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
     }
 
     /* Contact Form */
@@ -323,6 +351,16 @@
       .service-item {
         padding: 1.8rem 1rem;
       }
+      #about {
+        flex-direction: column;
+        text-align: center;
+      }
+      #about-text {
+        flex: unset;
+      }
+      #about img {
+        max-width: 100%;
+      }
     }
 
     @media (max-width: 480px) {
@@ -361,29 +399,44 @@
 
   <main>
     <section id="about">
-      <h2>About Us</h2>
-      <p>At Destiny Cleaning, we provide top-quality cleaning services to homes and businesses with reliability, professionalism, and care. Our trained staff uses eco-friendly products to make your spaces sparkle.</p>
+      <img src="https://images.unsplash.com/photo-1581579185689-15266e6a5a60?auto=format&fit=crop&w=600&q=80" alt="Professional cleaning team" />
+      <div id="about-text">
+        <h2>About Us</h2>
+        <p>
+          At Destiny Cleaning, we believe a clean environment is essential for your well-being, productivity, and peace of mind. Established with a passion for excellence, our mission is to provide reliable, eco-friendly cleaning solutions tailored to your unique needs.
+        </p>
+        <p>
+          Our dedicated team is trained to handle everything from routine housekeeping to specialized commercial cleaning projects, ensuring that every nook and cranny is spotless. We use only environmentally safe products to protect your health and the planet.
+        </p>
+        <p>
+          Customer satisfaction is our top priority. We strive to build lasting relationships by delivering quality, punctuality, and trustworthiness with every service. Whether it’s your home, office, or retail space, Destiny Cleaning is here to help you create a healthier, more inviting space.
+        </p>
+      </div>
     </section>
 
     <section id="services">
       <h2>Our Services</h2>
       <div class="services-list">
         <div class="service-item">
+          <img class="service-img" src="https://images.unsplash.com/photo-1607746882042-944635dfe10e?auto=format&fit=crop&w=600&q=80" alt="Residential cleaning" />
           <i class="fas fa-broom"></i>
           <h3>Residential Cleaning</h3>
           <p>From regular housekeeping to deep cleaning, we keep your home spotless and comfortable.</p>
         </div>
         <div class="service-item">
+          <img class="service-img" src="https://images.unsplash.com/photo-1571171637578-41bc2dd41cd2?auto=format&fit=crop&w=600&q=80" alt="Commercial cleaning" />
           <i class="fas fa-building"></i>
           <h3>Commercial Cleaning</h3>
           <p>Custom cleaning plans for offices, retail, and commercial spaces tailored to your needs.</p>
         </div>
         <div class="service-item">
+          <img class="service-img" src="https://images.unsplash.com/photo-1523757956233-94a86c36caeb?auto=format&fit=crop&w=600&q=80" alt="Window cleaning" />
           <i class="fas fa-water"></i>
           <h3>Window Cleaning</h3>
           <p>Crystal clear windows with streak-free results for a brighter view.</p>
         </div>
         <div class="service-item">
+          <img class="service-img" src="https://images.unsplash.com/photo-1582447500803-0567b92a34c0?auto=format&fit=crop&w=600&q=80" alt="Carpet cleaning" />
           <i class="fas fa-vacuum-robot"></i>
           <h3>Carpet Cleaning</h3>
           <p>Deep clean carpets that remove stains and allergens, extending the life of your flooring.</p>
@@ -413,4 +466,3 @@
   </footer>
 </body>
 </html>
-
