@@ -1,17 +1,3 @@
-Perfect — I’ll give you:
-	1.	✅ FINAL updated code (works without PIL)
-	2.	✅ Direct image sources (so you can download properly)
-	3.	✅ Ready for your asset log + coursework
-
-⸻
-
-💻 🔷 FINAL UPDATED CODE (NO PIL, FULL SYSTEM)
-
-👉 Uses:
-	•	PhotoImage ✅
-	•	images/ folder ✅
-	•	Dashboard like your screenshot ✅
-
 import tkinter as tk
 from tkinter import messagebox
 import sqlite3
@@ -35,7 +21,7 @@ conn.commit()
 # ---------------- MAIN WINDOW ----------------
 root = tk.Tk()
 root.title("Greenfield Local Hub")
-root.geometry("600x500")
+root.geometry("700x550")
 root.configure(bg="#e8f5e9")
 
 # ---------------- HEADER ----------------
@@ -48,9 +34,9 @@ tk.Label(header, text="Greenfield Local Hub",
 
 # ---------------- CARD ----------------
 card = tk.Frame(root, bg="white", bd=2, relief="raised")
-card.place(relx=0.5, rely=0.5, anchor="center", width=350, height=320)
+card.place(relx=0.5, rely=0.5, anchor="center", width=400, height=300)
 
-tk.Label(card, text="Welcome", font=("Arial", 14, "bold"), bg="white").pack(pady=10)
+tk.Label(card, text="Welcome", font=("Arial", 16, "bold"), bg="white").pack(pady=10)
 tk.Label(card, text="Select your role", bg="white").pack(pady=5)
 
 # ---------------- FUNCTIONS ----------------
@@ -64,8 +50,10 @@ def open_producer():
 # -------- LOGIN --------
 def open_login():
     win = tk.Toplevel(root)
-    win.title("Login")
-    win.geometry("300x250")
+    win.title("Customer Login")
+    win.geometry("350x300")
+
+    tk.Label(win, text="Login", font=("Arial", 14)).pack(pady=10)
 
     tk.Label(win, text="Email").pack()
     email = tk.Entry(win)
@@ -82,13 +70,16 @@ def open_login():
 
         if user:
             win.destroy()
-            open_dashboard()
+            open_dashboard(user)
         else:
             messagebox.showerror("Error", "Invalid login")
 
-    tk.Button(win, text="Login", command=login).pack(pady=10)
+    tk.Button(win, text="Login", bg="#4CAF50", fg="white",
+              command=login).pack(pady=10)
 
-    tk.Button(win, text="Don't have an account?",
+    tk.Button(win,
+              text="Don't have an account?",
+              fg="blue",
               command=lambda: open_register(win)).pack()
 
 # -------- REGISTER --------
@@ -97,13 +88,15 @@ def open_register(parent):
 
     win = tk.Toplevel(root)
     win.title("Register")
-    win.geometry("300x400")
+    win.geometry("350x450")
+
+    tk.Label(win, text="Create Account", font=("Arial", 14)).pack(pady=10)
 
     tk.Label(win, text="Username").pack()
     username = tk.Entry(win)
     username.pack()
 
-    tk.Label(win, text="Email").pack()
+    tk.Label(win, text="Email Address").pack()
     email = tk.Entry(win)
     email.pack()
 
@@ -111,7 +104,7 @@ def open_register(parent):
     password = tk.Entry(win, show="*")
     password.pack()
 
-    tk.Label(win, text="Address").pack()
+    tk.Label(win, text="Home Address").pack()
     address = tk.Entry(win)
     address.pack()
 
@@ -120,6 +113,11 @@ def open_register(parent):
     county.pack()
 
     def register():
+        if (username.get() == "" or email.get() == "" or
+            password.get() == "" or address.get() == "" or county.get() == ""):
+            messagebox.showerror("Error", "Fill all fields")
+            return
+
         cursor.execute("""
         INSERT INTO users (username, email, password, address, county)
         VALUES (?, ?, ?, ?, ?)
@@ -130,22 +128,40 @@ def open_register(parent):
         win.destroy()
         open_dashboard()
 
-    tk.Button(win, text="Register", command=register).pack(pady=10)
+    tk.Button(win, text="Register", bg="#4CAF50", fg="white",
+              command=register).pack(pady=15)
 
 # -------- DASHBOARD --------
-def open_dashboard():
+def open_dashboard(user=None):
     dash = tk.Toplevel(root)
-    dash.title("Shop")
-    dash.geometry("600x500")
+    dash.title("GLH Store")
+    dash.geometry("800x600")
     dash.configure(bg="white")
 
-    # SEARCH BAR
-    search = tk.Entry(dash, width=40)
-    search.pack(pady=10)
+    # HEADER BAR
+    header = tk.Frame(dash, bg="#2e7d32", height=60)
+    header.pack(fill="x")
 
-    # PRODUCT FRAME
-    frame = tk.Frame(dash, bg="white")
-    frame.pack()
+    tk.Label(header, text="GLH Store",
+             fg="white", bg="#2e7d32",
+             font=("Arial", 16, "bold")).pack(side="left", padx=10)
+
+    search = tk.Entry(header, width=40)
+    search.pack(side="left", padx=20)
+
+    tk.Button(header, text="Search").pack(side="left")
+
+    # NAV BAR
+    nav = tk.Frame(dash, bg="#388e3c", height=40)
+    nav.pack(fill="x")
+
+    for item in ["All", "Fresh", "Deals", "Local", "Popular"]:
+        tk.Button(nav, text=item, bg="#388e3c", fg="white", bd=0)\
+            .pack(side="left", padx=10)
+
+    # PRODUCT AREA
+    main = tk.Frame(dash, bg="white")
+    main.pack(fill="both", expand=True, pady=10)
 
     # LOAD IMAGES (NO PIL)
     milk = tk.PhotoImage(file="images/milk.png")
@@ -154,110 +170,53 @@ def open_dashboard():
     veg = tk.PhotoImage(file="images/veg.png")
 
     products = [
-        ("Milk", "£1.50", milk),
-        ("Bread", "£1.20", bread),
-        ("Eggs", "£2.50", eggs),
-        ("Veg", "£3.00", veg),
+        ("Fresh Milk", "£1.50", milk),
+        ("Organic Bread", "£1.20", bread),
+        ("Farm Eggs", "£2.50", eggs),
+        ("Fresh Veg", "£3.00", veg),
     ]
 
     row = 0
     col = 0
 
     for name, price, img in products:
-        box = tk.Frame(frame, bd=1, relief="solid")
-        box.grid(row=row, column=col, padx=10, pady=10)
+        box = tk.Frame(main, bd=1, relief="solid", bg="white", width=180, height=200)
+        box.grid(row=row, column=col, padx=15, pady=15)
 
-        lbl = tk.Label(box, image=img)
-        lbl.image = img
-        lbl.pack()
+        img_label = tk.Label(box, image=img, bg="white")
+        img_label.image = img
+        img_label.pack(pady=5)
 
-        tk.Label(box, text=name).pack()
-        tk.Label(box, text=price, fg="green").pack()
+        tk.Label(box, text=name, bg="white").pack()
+        tk.Label(box, text=price, fg="green", bg="white").pack()
+
+        tk.Button(box, text="Add to Cart", bg="#4CAF50", fg="white").pack(pady=5)
 
         col += 1
-        if col == 2:
+        if col == 4:
             col = 0
             row += 1
 
+    # FOOTER
+    footer = tk.Frame(dash, bg="#2e7d32", height=40)
+    footer.pack(fill="x")
+
+    tk.Label(footer, text="GLH © 2026",
+             fg="white", bg="#2e7d32").pack()
+
 # ---------------- BUTTONS ----------------
-tk.Button(card, text="Customer", command=open_customer).pack(pady=10)
-tk.Button(card, text="Producer", command=open_producer).pack()
+tk.Button(card, text="Customer", width=20,
+          bg="#4CAF50", fg="white",
+          command=open_customer).pack(pady=10)
 
+tk.Button(card, text="Producer", width=20,
+          bg="#1976D2", fg="white",
+          command=open_producer).pack()
+
+# ---------------- FOOTER ----------------
+tk.Label(root,
+         text="Supporting Local Farmers & Producers",
+         bg="#e8f5e9").pack(side="bottom", pady=10)
+
+# ---------------- RUN ----------------
 root.mainloop()
-
-
-⸻
-
-🔷 🖼️ IMAGE LINKS (DOWNLOAD THESE)
-
-👉 Use these platforms:
-
-🎨 Logos & Icons
-	•	Canva
-Search: “grocery logo green png”
-	•	Flaticon
-Search: “shopping cart icon png”
-
-⸻
-
-🛒 Product Images (IMPORTANT)
-
-Search these EXACT terms on Google:
-
-milk png transparent
-bread png transparent
-eggs png transparent
-vegetables png transparent
-
-👉 Download from:
-	•	PNG sites (recommended)
-	•	Or Google Images → Tools → Transparent
-
-⸻
-
-🔷 📁 SAVE AS
-
-images/
-milk.png
-bread.png
-eggs.png
-veg.png
-
-
-⸻
-
-🔷 ✍️ ASSET LOG (READY)
-
-Asset	Source	Purpose
-Milk image	Google Images	Product display
-Bread image	Google Images	Product display
-Eggs image	Google Images	Product display
-Vegetables image	Google Images	Product display
-
-
-⸻
-
-🔥 FINAL RESULT
-
-You now have:
-
-✔ Login + Register
-✔ Dashboard like shopping app
-✔ Image-based products
-✔ Working without PIL
-✔ Proper structure for marks
-
-⸻
-
-🔹 NEXT STEP (VERY IMPORTANT)
-
-To reach full distinction:
-
-👉 Add cart system (real checkout)
-👉 Add order tracking
-👉 Add producer dashboard
-
-⸻
-
-Just say:
-👉 “Add cart system now”
