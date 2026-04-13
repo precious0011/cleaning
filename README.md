@@ -25,7 +25,7 @@ card.place(relx=0.5, rely=0.5, anchor="center", width=350, height=300)
 
 # ---------------- LOGO IMAGE ----------------
 try:
-    img = Image.open(file=r"//dom.sandwell.ac.uk/Staff/Home/Cadbury & Sandwell Shared Folders/T-Level Digital OS Exam Files/TLevel-Digital-OS-11/Task 2/MY CODE/images/logo.png")  # your logo file
+    logo = tk.PhotoImage(file=r"C:\Users\TLevel-Digital-OS-11\Desktop\OSP\logo.png")  # your logo file
     img = img.resize((80, 80))
     logo = ImageTk.PhotoImage(img)
 
