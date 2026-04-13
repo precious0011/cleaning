@@ -180,6 +180,7 @@ def open_dashboard(user=None):
 
     # LOAD IMAGES
     milk = tk.PhotoImage(file="images/milk.png")
+    (file=r"C:\Users\735734\Downloads\OSP TASK 2 PRATICE\logo.png")
     bread = tk.PhotoImage(file="images/bread.png")
     eggs = tk.PhotoImage(file="images/eggs.png")
     veg = tk.PhotoImage(file="images/veg.png")
