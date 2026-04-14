@@ -16,6 +16,16 @@ CREATE TABLE IF NOT EXISTS users (
     county TEXT
 )
 """)
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_email TEXT,
+    items TEXT,
+    total REAL
+)
+""")
+
 conn.commit()
 
 # ---------------- MAIN WINDOW ----------------
@@ -41,7 +51,7 @@ try:
     logo = tk.PhotoImage(file="images/logo.png")
     logo_label = tk.Label(card, image=logo, bg="white")
     logo_label.image = logo
-    logo_label.pack(pady=10)
+    logo_label.pack(pady=5)
 except:
     tk.Label(card, text="[Logo Here]", bg="white").pack(pady=10)
 
@@ -159,67 +169,128 @@ def open_register(parent):
 
         conn.commit()
 
-        messagebox.showinfo("Success", "Account created successfully")
-
+        messagebox.showinfo("Success", "Account created")
         win.destroy()
-        open_dashboard()
+        open_dashboard((None, user_username, user_email))
 
     tk.Button(win, text="Register", bg="#4CAF50", fg="white",
               command=register).pack(pady=15)
 
 # -------- DASHBOARD --------
-def open_dashboard(user=None):
+def open_dashboard(user):
     dash = tk.Toplevel(root)
     dash.title("GLH Store")
-    dash.geometry("850x600")
+    dash.geometry("950x650")
     dash.configure(bg="white")
 
-    tk.Label(dash, text="Welcome to GLH Store",
-             font=("Arial", 16)).pack(pady=10)
+    user_email = user[2]
+    cart = []
 
-    frame = tk.Frame(dash, bg="white")
-    frame.pack()
+    # HEADER
+    header = tk.Frame(dash, bg="#2e7d32", height=60)
+    header.pack(fill="x")
+
+    tk.Label(header, text="GLH Store",
+             fg="white", bg="#2e7d32",
+             font=("Arial", 16, "bold")).pack(side="left", padx=10)
+
+    # CART
+    def view_cart():
+        win = tk.Toplevel(dash)
+        win.title("Cart")
+        win.geometry("400x400")
+
+        total = 0
+
+        for item in cart:
+            tk.Label(win, text=f"{item[0]} - £{item[1]}").pack()
+            total += item[1]
+
+        tk.Label(win, text=f"Total: £{total}",
+                 font=("Arial", 12, "bold")).pack(pady=10)
+
+        def checkout():
+            if not cart:
+                messagebox.showerror("Error", "Cart empty")
+                return
+
+            items = ", ".join([i[0] for i in cart])
+
+            cursor.execute("""
+            INSERT INTO orders (user_email, items, total)
+            VALUES (?, ?, ?)
+            """, (user_email, items, total))
+            conn.commit()
+
+            cart.clear()
+            messagebox.showinfo("Success", "Order placed")
+            win.destroy()
+
+        tk.Button(win, text="Checkout",
+                  bg="#4CAF50", fg="white",
+                  command=checkout).pack(pady=10)
+
+    tk.Button(header, text="Cart 🛒",
+              command=view_cart).pack(side="right", padx=10)
+
+    # ORDER HISTORY
+    def view_orders():
+        win = tk.Toplevel(dash)
+        win.title("Orders")
+        win.geometry("400x400")
+
+        cursor.execute("SELECT items, total FROM orders WHERE user_email=?", (user_email,))
+        orders = cursor.fetchall()
+
+        if not orders:
+            tk.Label(win, text="No orders yet").pack()
+        else:
+            for o in orders:
+                tk.Label(win, text=f"{o[0]} | £{o[1]}").pack()
+
+    tk.Button(header, text="Orders 📦",
+              command=view_orders).pack(side="right")
+
+    # PRODUCTS
+    main = tk.Frame(dash, bg="white")
+    main.pack(pady=20)
 
     # LOAD IMAGES
     milk = tk.PhotoImage(file="images/milk.png")
     bread = tk.PhotoImage(file="images/bread.png")
     eggs = tk.PhotoImage(file="images/eggs.png")
     veg = tk.PhotoImage(file="images/veg.png")
-    apple = tk.PhotoImage(file="images/apple.png")
-    cheese = tk.PhotoImage(file="images/cheese.png")
-    juice = tk.PhotoImage(file="images/juice.png")
-    chicken = tk.PhotoImage(file="images/chicken.png")
 
     products = [
-        ("Milk", "£1.50", milk),
-        ("Bread", "£1.20", bread),
-        ("Eggs", "£2.50", eggs),
-        ("Vegetables", "£3.00", veg),
-        ("Apple", "£1.00", apple),
-        ("Cheese", "£2.80", cheese),
-        ("Juice", "£1.90", juice),
-        ("Chicken", "£4.50", chicken),
+        ("Milk", 1.50, milk),
+        ("Bread", 1.20, bread),
+        ("Eggs", 2.50, eggs),
+        ("Vegetables", 3.00, veg),
     ]
+
+    def add_to_cart(name, price):
+        cart.append((name, price))
+        messagebox.showinfo("Cart", f"{name} added")
 
     row = 0
     col = 0
 
     for name, price, img in products:
-        box = tk.Frame(frame, bd=1, relief="solid", bg="white")
+        box = tk.Frame(main, bd=1, relief="solid")
         box.grid(row=row, column=col, padx=15, pady=15)
 
-        lbl = tk.Label(box, image=img, bg="white")
+        lbl = tk.Label(box, image=img)
         lbl.image = img
         lbl.pack()
 
-        tk.Label(box, text=name, bg="white").pack()
-        tk.Label(box, text=price, fg="green", bg="white").pack()
+        tk.Label(box, text=name).pack()
+        tk.Label(box, text=f"£{price}", fg="green").pack()
 
         tk.Button(box, text="Add to Cart",
-                  bg="#4CAF50", fg="white").pack(pady=5)
+                  command=lambda n=name, p=price: add_to_cart(n, p)).pack()
 
         col += 1
-        if col == 4:
+        if col == 2:
             col = 0
             row += 1
 
