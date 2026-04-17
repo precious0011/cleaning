@@ -1,4 +1,5 @@
 Version 1
+
 import tkinter as tk
 from tkinter import messagebox
 
@@ -292,3 +293,109 @@ tk.Label(root,
 
 # ---------------- RUN ----------------
 root.mainloop()
+
+
+
+Version 4(Producer Dashboard)
+def open_producer_dashboard():
+    p_win = tk.Toplevel(root)
+    p_win.title("Producer Management")
+    p_win.geometry("850x550")
+
+    # Sidebar
+    sidebar = tk.Frame(p_win, bg="#1b5e20", width=180) # Darker green sidebar
+    sidebar.pack(side="left", fill="y")
+    
+    # Main Content Area
+    container = tk.Frame(p_win, bg="white")
+    container.pack(side="right", fill="both", expand=True)
+
+    def clear_view():
+        for widget in container.winfo_children():
+            widget.destroy()
+
+    # 1. VIEW PRODUCTS
+    def view_products():
+        clear_view()
+        tk.Label(container, text="Current Inventory", font=("Arial", 16, "bold"), fg="#2e7d32", bg="white").pack(pady=10)
+        
+        tree = ttk.Treeview(container, columns=("ID", "Name", "Price", "Stock"), show="headings")
+        tree.heading("ID", text="ID")
+        tree.heading("Name", text="Product")
+        tree.heading("Price", text="Price (£)")
+        tree.heading("Stock", text="Current Stock")
+        tree.pack(fill="both", expand=True, padx=20, pady=10)
+
+        cursor.execute("SELECT id, name, price, stock FROM products")
+        for row in cursor.fetchall():
+            tree.insert("", "end", values=row)
+
+    # 2. UPDATE INVENTORY (Name, Quantity, and Price)
+    def update_inventory_ui():
+        clear_view()
+        tk.Label(container, text="Update Inventory", font=("Arial", 16, "bold"), fg="#2e7d32", bg="white").pack(pady=20)
+        
+        # Product Name
+        tk.Label(container, text="Product Name:", bg="white").pack()
+        name_entry = tk.Entry(container, width=35)
+        name_entry.pack(pady=5)
+
+        # Quantity
+        tk.Label(container, text="Quantity in Stock:", bg="white").pack()
+        stock_entry = tk.Entry(container, width=35)
+        stock_entry.pack(pady=5)
+
+        # Price
+        tk.Label(container, text="Price per Unit (£):", bg="white").pack()
+        price_entry = tk.Entry(container, width=35)
+        price_entry.pack(pady=5)
+
+        def save_changes():
+            try:
+                name = name_entry.get().strip()
+                qty = int(stock_entry.get())
+                price = float(price_entry.get())
+                
+                # Check if product exists first
+                cursor.execute("SELECT * FROM products WHERE name=?", (name,))
+                if cursor.fetchone():
+                    cursor.execute("UPDATE products SET stock=?, price=? WHERE name=?", (qty, price, name))
+                    messagebox.showinfo("Success", f"Updated {name} successfully.")
+                else:
+                    # Optional: Add as new product if it doesn't exist
+                    cursor.execute("INSERT INTO products (name, price, stock) VALUES (?, ?, ?)", (name, price, qty))
+                    messagebox.showinfo("Success", f"Added {name} as a new product.")
+                
+                conn.commit()
+                view_products()
+            except ValueError:
+                messagebox.showerror("Error", "Please enter valid numbers for Stock and Price.")
+
+        # Updated Green Button
+        tk.Button(container, text="Save Inventory Changes", bg="#4CAF50", fg="white", 
+                  font=("Arial", 10, "bold"), command=save_changes, width=25, height=2).pack(pady=20)
+
+    # 3. VIEW ORDERS
+    def view_orders():
+        clear_view()
+        tk.Label(container, text="Customer Orders", font=("Arial", 16, "bold"), fg="#2e7d32", bg="white").pack(pady=10)
+        
+        tree = ttk.Treeview(container, columns=("Email", "Items", "Total"), show="headings")
+        tree.heading("Email", text="Customer Email")
+        tree.heading("Items", text="Items Purchased")
+        tree.heading("Total", text="Total (£)")
+        tree.pack(fill="both", expand=True, padx=20, pady=10)
+
+        cursor.execute("SELECT user_email, items, total FROM orders")
+        for row in cursor.fetchall():
+            tree.insert("", "end", values=row)
+
+    # SIDEBAR BUTTONS
+    tk.Label(sidebar, text="DASHBOARD", fg="white", bg="#1b5e20", font=("Arial", 12, "bold")).pack(pady=20)
+    
+    btn_opts = {"bg": "#2e7d32", "fg": "white", "bd": 0, "pady": 12, "width": 20, "font": ("Arial", 10)}
+    tk.Button(sidebar, text="View Products", command=view_products, **btn_opts).pack(pady=2)
+    tk.Button(sidebar, text="Update Inventory", command=update_inventory_ui, **btn_opts).pack(pady=2)
+    tk.Button(sidebar, text="View Orders", command=view_orders, **btn_opts).pack(pady=2)
+
+    view_products()
