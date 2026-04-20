@@ -1,69 +1,134 @@
-Version 1
-
+version 1
 import tkinter as tk
 from tkinter import messagebox
 
-
-# ---------------- MAIN WINDOW ----------------
 root = tk.Tk()
-root.title("TOKA FITNESS")
-root.geometry("700x550")
-root.configure(bg="#e8f5e9")
+root.title("GLH Prototype V1")
+root.geometry("400x400")
 
-# ---------------- HEADER ----------------
-header = tk.Frame(root, bg="#2e7d32", height=80)
-header.pack(fill="x")
+# simple login screen
+tk.Label(root, text="Login", font=("Arial", 14)).pack(pady=10)
 
-tk.Label(header, text="TOKA FITNESS",
-         font=("Arial", 18, "bold"),
-         fg="white", bg="#2e7d32").pack(pady=20)
+tk.Label(root, text="Email").pack()
+email = tk.Entry(root)
+email.pack()
 
-# ---------------- CARD ----------------
-card = tk.Frame(root, bg="white", bd=2, relief="raised")
-card.place(relx=0.5, rely=0.5, anchor="center", width=400, height=300)
+tk.Label(root, text="Password").pack()
+password = tk.Entry(root, show="*")
+password.pack()
 
-tk.Label(card, text="Welcome", font=("Arial", 16, "bold"), bg="white").pack(pady=10)
-tk.Label(card, text="Select your role", bg="white").pack(pady=5)
+def login():
+    # basic check (no database yet)
+    if email.get() == "" or password.get() == "":
+        messagebox.showerror("Error", "Fill all fields")
+    else:
+        open_dashboard()
 
-# ---------------- FUNCTIONS ----------------
+def open_dashboard():
+    dash = tk.Toplevel(root)
+    dash.title("Dashboard")
 
-def open_customer():
-    # Changed to show "Coming Soon" instead of opening login
-    messagebox.showinfo("Info", "Customer portal coming soon")
+    # simple product list
+    products = ["Milk", "Bread", "Eggs"]
 
-def open_producer():
-    messagebox.showinfo("Info", "Producer dashboard coming soon")
+    for p in products:
+        tk.Label(dash, text=p).pack()
 
-# Note: open_login, open_register, and open_dashboard are kept in your 
-# script background so you can use them later when you're ready!
+tk.Button(root, text="Login", command=login).pack(pady=10)
 
-# ---------------- BUTTONS ----------------
-tk.Button(card, text="Customer", width=20,
-          bg="#4CAF50", fg="white",
-          command=open_customer).pack(pady=10)
-
-tk.Button(card, text="Producer", width=20,
-          bg="#1976D2", fg="white",
-          command=open_producer).pack()
-
-# ---------------- FOOTER ----------------
-tk.Label(root,
-         text="Supporting Local Farmers & Producers",
-         bg="#e8f5e9").pack(side="bottom", pady=10)
-
-# ---------------- RUN ----------------
 root.mainloop()
 
 
-Version 2
+version 2
+import tkinter as tk
+from tkinter import messagebox
+import sqlite3
+
+# database added in this version
+conn = sqlite3.connect("v2.db")
+cursor = conn.cursor()
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS users (
+    email TEXT,
+    password TEXT
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS orders (
+    items TEXT
+)
+""")
+
+conn.commit()
+
+root = tk.Tk()
+root.title("GLH Prototype V2")
+root.geometry("500x450")
+
+cart = []
+
+# login
+tk.Label(root, text="Login").pack()
+
+email = tk.Entry(root)
+email.pack()
+
+password = tk.Entry(root, show="*")
+password.pack()
+
+def register():
+    cursor.execute("INSERT INTO users VALUES (?, ?)",
+                   (email.get(), password.get()))
+    conn.commit()
+    messagebox.showinfo("Done", "Registered")
+
+def login():
+    cursor.execute("SELECT * FROM users WHERE email=? AND password=?",
+                   (email.get(), password.get()))
+    if cursor.fetchone():
+        open_dashboard()
+    else:
+        messagebox.showerror("Error", "Invalid")
+
+def open_dashboard():
+    dash = tk.Toplevel(root)
+
+    products = [("Milk", 1.5), ("Bread", 1.2)]
+
+    def add_cart(name):
+        cart.append(name)
+
+    def checkout():
+        cursor.execute("INSERT INTO orders VALUES (?)",
+                       (",".join(cart),))
+        conn.commit()
+        messagebox.showinfo("Done", "Order saved")
+
+    for p in products:
+        tk.Button(dash, text=p[0],
+                  command=lambda n=p[0]: add_cart(n)).pack()
+
+    tk.Button(dash, text="Checkout", command=checkout).pack()
+
+tk.Button(root, text="Login", command=login).pack()
+tk.Button(root, text="Register", command=register).pack()
+
+root.mainloop()
+
+
+version 3
 import tkinter as tk
 from tkinter import messagebox
 import sqlite3
 
 # ---------------- DATABASE ----------------
-conn = sqlite3.connect("glh.db")
+# using sqlite because its simple for this project
+conn = sqlite3.connect("glh_final.db")
 cursor = conn.cursor()
 
+# create tables
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,41 +139,77 @@ CREATE TABLE IF NOT EXISTS users (
     county TEXT
 )
 """)
-conn.commit()
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_email TEXT,
+    items TEXT,
+    total REAL
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    price REAL,
+    stock INTEGER
+)
+""")
+
+# insert products first time
+cursor.execute("SELECT COUNT(*) FROM products")
+if cursor.fetchone()[0] == 0:
+    cursor.executemany("""
+    INSERT INTO products (name, price, stock)
+    VALUES (?, ?, ?)
+    """, [
+        ("Milk", 1.50, 10),
+        ("Bread", 1.20, 15),
+        ("Eggs", 2.50, 20),
+        ("Vegetables", 3.00, 12),
+        ("Apple", 1.00, 25),
+        ("Cheese", 2.80, 8),
+        ("Juice", 1.90, 18),
+        ("Chicken", 4.50, 6)
+    ])
+    conn.commit()
 
 # ---------------- MAIN WINDOW ----------------
 root = tk.Tk()
-root.title("TOKA FINESS")
-root.geometry("700x550")
+root.title("Greenfield Local Hub")
+root.geometry("750x550")
 root.configure(bg="#e8f5e9")
 
-# ---------------- HEADER ----------------
+# header
 header = tk.Frame(root, bg="#2e7d32", height=80)
 header.pack(fill="x")
 
-tk.Label(header, text="TOKA FITNESS",
-         font=("Arial", 18, "bold"),
-         fg="white", bg="#2e7d32").pack(pady=20)
+tk.Label(header, text="Greenfield Local Hub",
+         fg="white", bg="#2e7d32",
+         font=("Arial", 18, "bold")).pack(pady=20)
 
-# ---------------- CARD ----------------
+# main card
 card = tk.Frame(root, bg="white", bd=2, relief="raised")
-card.place(relx=0.5, rely=0.5, anchor="center", width=400, height=300)
+card.place(relx=0.5, rely=0.5, anchor="center", width=420, height=350)
 
-tk.Label(card, text="Welcome", font=("Arial", 16, "bold"), bg="white").pack(pady=10)
-tk.Label(card, text="Select your role", bg="white").pack(pady=5)
+# logo (make sure file exists)
+try:
+    logo = tk.PhotoImage(file=r"C:\Users\TLevel-Digital-OS-11\Desktop\Version control\images\logo.png")
+    lbl = tk.Label(card, image=logo, bg="white")
+    lbl.image = logo
+    lbl.pack(pady=5)
+except:
+    tk.Label(card, text="[Logo here]", bg="white").pack()
 
-# ---------------- FUNCTIONS ----------------
+tk.Label(card, text="Welcome", font=("Arial", 14, "bold"), bg="white").pack()
+tk.Label(card, text="Choose your role", bg="white").pack(pady=5)
 
-def open_customer():
-    open_login()
-
-def open_producer():
-    messagebox.showinfo("Info", "Producer dashboard coming soon")
-
-# -------- LOGIN --------
+# ---------------- LOGIN ----------------
 def open_login():
     win = tk.Toplevel(root)
-    win.title("Customer Login")
+    win.title("Login")
     win.geometry("350x300")
 
     tk.Label(win, text="Login", font=("Arial", 14)).pack(pady=10)
@@ -122,280 +223,199 @@ def open_login():
     password.pack()
 
     def login():
-        if email.get() == "" or password.get() == "":
-            messagebox.showerror("Error", "Please fill all fields")
-            return
+        # had issue before so cleaned inputs
+        e = email.get().strip().lower()
+        p = password.get().strip()
 
-        cursor.execute("SELECT * FROM users WHERE email=? AND password=?",
-                       (email.get(), password.get()))
+        cursor.execute("SELECT * FROM users WHERE email=? AND password=?", (e, p))
         user = cursor.fetchone()
 
         if user:
-            messagebox.showinfo("Success", "Login successful")
             win.destroy()
-            open_dashboard(user)
+            open_customer_dashboard(user)
         else:
-            messagebox.showerror("Error", "Invalid email or password")
+            messagebox.showerror("Error", "Invalid details")
 
     tk.Button(win, text="Login", bg="#4CAF50", fg="white",
               command=login).pack(pady=10)
 
-    tk.Button(win,
-              text="Don't have an account?",
-              fg="blue",
+    tk.Button(win, text="Register",
               command=lambda: open_register(win)).pack()
 
-# -------- REGISTER --------
-def open_register(parent):
-    parent.destroy()
+# ---------------- REGISTER ----------------
+def open_register(prev):
+    prev.destroy()
 
     win = tk.Toplevel(root)
     win.title("Register")
     win.geometry("350x450")
 
-    tk.Label(win, text="Create Account", font=("Arial", 14)).pack(pady=10)
+    fields = {}
+    labels = ["Username", "Email", "Password", "Address", "County"]
 
-    tk.Label(win, text="Username").pack()
-    username = tk.Entry(win)
-    username.pack()
-
-    tk.Label(win, text="Email Address").pack()
-    email = tk.Entry(win)
-    email.pack()
-
-    tk.Label(win, text="Password").pack()
-    password = tk.Entry(win, show="*")
-    password.pack()
-
-    tk.Label(win, text="Home Address").pack()
-    address = tk.Entry(win)
-    address.pack()
-
-    tk.Label(win, text="County").pack()
-    county = tk.Entry(win)
-    county.pack()
+    for l in labels:
+        tk.Label(win, text=l).pack()
+        ent = tk.Entry(win, show="*" if l=="Password" else None)
+        ent.pack()
+        fields[l] = ent
 
     def register():
-        if (username.get() == "" or email.get() == "" or
-            password.get() == "" or address.get() == "" or county.get() == ""):
-            messagebox.showerror("Error", "Please fill all fields")
+        data = {k: v.get().strip() for k, v in fields.items()}
+
+        if "" in data.values():
+            messagebox.showerror("Error", "Fill all fields")
             return
 
-        cursor.execute("SELECT * FROM users WHERE email=?", (email.get(),))
-        existing_user = cursor.fetchone()
-
-        if existing_user:
-            messagebox.showerror("Error", "Email already registered")
+        cursor.execute("SELECT * FROM users WHERE email=?", (data["Email"],))
+        if cursor.fetchone():
+            messagebox.showerror("Error", "Email exists")
             return
 
         cursor.execute("""
         INSERT INTO users (username, email, password, address, county)
         VALUES (?, ?, ?, ?, ?)
-        """, (username.get(), email.get(), password.get(),
-              address.get(), county.get()))
+        """, (data["Username"], data["Email"].lower(),
+              data["Password"], data["Address"], data["County"]))
 
         conn.commit()
 
-        messagebox.showinfo("Success", "Account created successfully")
-
         win.destroy()
-        open_dashboard()
+        open_customer_dashboard((None, data["Username"], data["Email"]))
 
     tk.Button(win, text="Register", bg="#4CAF50", fg="white",
               command=register).pack(pady=15)
 
-# -------- DASHBOARD --------
-def open_dashboard(user=None):
+# ---------------- CUSTOMER DASHBOARD ----------------
+def open_customer_dashboard(user):
     dash = tk.Toplevel(root)
-    dash.title("GLH Store")
-    dash.geometry("800x600")
-    dash.configure(bg="white")
+    dash.title("Customer Dashboard")
+    dash.geometry("950x650")
 
-    # HEADER BAR
-    top = tk.Frame(dash, bg="#2e7d32", height=60)
+    user_email = user[2]
+    cart = []
+
+    # header
+    top = tk.Frame(dash, bg="#2e7d32")
     top.pack(fill="x")
 
-    tk.Label(top, text="GLH Store",
-             fg="white", bg="#2e7d32",
-             font=("Arial", 16, "bold")).pack(side="left", padx=10)
+    tk.Label(top, text="GLH Store", fg="white", bg="#2e7d32").pack(side="left")
 
-    search = tk.Entry(top, width=40)
-    search.pack(side="left", padx=20)
+    # cart window
+    def view_cart():
+        win = tk.Toplevel(dash)
+        total = sum([i[1] for i in cart])
 
-    tk.Button(top, text="Search").pack(side="left")
+        for i in cart:
+            tk.Label(win, text=f"{i[0]} - £{i[1]}").pack()
 
-    # NAV BAR
-    nav = tk.Frame(dash, bg="#388e3c", height=40)
-    nav.pack(fill="x")
+        tk.Label(win, text=f"Total £{total}").pack()
 
-    for item in ["All", "Fresh", "Deals", "Local", "Popular"]:
-        tk.Button(nav, text=item, bg="#388e3c", fg="white", bd=0)\
-            .pack(side="left", padx=10)
+        def checkout():
+            if not cart:
+                messagebox.showerror("Error", "Cart empty")
+                return
 
-    # PRODUCT AREA
-    main = tk.Frame(dash, bg="white")
-    main.pack(fill="both", expand=True, pady=10)
+            items = ", ".join([i[0] for i in cart])
 
-    # LOAD IMAGES
-    milk = tk.PhotoImage(file="images/milk.png")
-    bread = tk.PhotoImage(file="images/bread.png")
-    eggs = tk.PhotoImage(file="images/eggs.png")
-    veg = tk.PhotoImage(file="images/veg.png")
+            cursor.execute("INSERT INTO orders (user_email, items, total) VALUES (?, ?, ?)",
+                           (user_email, items, total))
+            conn.commit()
 
-    products = [
-        ("Fresh Milk", "£1.50", milk),
-        ("Organic Bread", "£1.20", bread),
-        ("Farm Eggs", "£2.50", eggs),
-        ("Fresh Veg", "£3.00", veg),
-    ]
+            cart.clear()
+            messagebox.showinfo("Success", "Order placed")
 
-    row = 0
-    col = 0
+        tk.Button(win, text="Checkout", command=checkout).pack()
 
-    for name, price, img in products:
-        box = tk.Frame(main, bd=1, relief="solid", bg="white", width=180, height=200)
-        box.grid(row=row, column=col, padx=15, pady=15)
+    tk.Button(top, text="Cart", command=view_cart).pack(side="right")
 
-        img_label = tk.Label(box, image=img, bg="white")
-        img_label.image = img
-        img_label.pack(pady=5)
+    # orders
+    def view_orders():
+        win = tk.Toplevel(dash)
 
-        tk.Label(box, text=name, bg="white").pack()
-        tk.Label(box, text=price, fg="green", bg="white").pack()
+        cursor.execute("SELECT items, total FROM orders WHERE user_email=?", (user_email,))
+        data = cursor.fetchall()
 
-        tk.Button(box, text="Add to Cart", bg="#4CAF50", fg="white").pack(pady=5)
+        if not data:
+            tk.Label(win, text="No orders yet").pack()
+        else:
+            for d in data:
+                tk.Label(win, text=f"{d[0]} | £{d[1]}").pack()
 
-        col += 1
-        if col == 4:
-            col = 0
-            row += 1
+    tk.Button(top, text="Orders", command=view_orders).pack(side="right")
 
-    # FOOTER
-    footer = tk.Frame(dash, bg="#2e7d32", height=40)
-    footer.pack(fill="x")
+    # product display
+    main = tk.Frame(dash)
+    main.pack(pady=20)
 
-    tk.Label(footer, text="GLH © 2026",
-             fg="white", bg="#2e7d32").pack()
+    cursor.execute("SELECT name, price FROM products")
+    products = cursor.fetchall()
+
+    def add_to_cart(n, p):
+        cart.append((n, p))
+        messagebox.showinfo("Cart", f"{n} added")
+
+    r = c = 0
+    for p in products:
+        box = tk.Frame(main, bd=1, relief="solid")
+        box.grid(row=r, column=c, padx=15, pady=15)
+
+        tk.Label(box, text=p[0]).pack()
+        tk.Label(box, text=f"£{p[1]}", fg="green").pack()
+
+        tk.Button(box, text="Add",
+                  command=lambda n=p[0], pr=p[1]: add_to_cart(n, pr)).pack()
+
+        c += 1
+        if c == 3:
+            c = 0
+            r += 1
+
+# ---------------- PRODUCER DASHBOARD ----------------
+def open_producer_dashboard():
+    dash = tk.Toplevel(root)
+    dash.title("Producer Dashboard")
+    dash.geometry("800x500")
+
+    def view_products():
+        win = tk.Toplevel(dash)
+        cursor.execute("SELECT name, price, stock FROM products")
+        for p in cursor.fetchall():
+            tk.Label(win, text=f"{p[0]} | £{p[1]} | Stock: {p[2]}").pack()
+
+    def update_stock():
+        win = tk.Toplevel(dash)
+
+        tk.Label(win, text="Product name").pack()
+        name = tk.Entry(win)
+        name.pack()
+
+        tk.Label(win, text="New stock").pack()
+        stock = tk.Entry(win)
+        stock.pack()
+
+        def update():
+            cursor.execute("UPDATE products SET stock=? WHERE name=?",
+                           (stock.get(), name.get()))
+            conn.commit()
+            messagebox.showinfo("Done", "Stock updated")
+
+        tk.Button(win, text="Update", command=update).pack()
+
+    def view_orders():
+        win = tk.Toplevel(dash)
+        cursor.execute("SELECT user_email, items, total FROM orders")
+        for o in cursor.fetchall():
+            tk.Label(win, text=f"{o[0]} | {o[1]} | £{o[2]}").pack()
+
+    tk.Button(dash, text="View Products", command=view_products).pack(pady=10)
+    tk.Button(dash, text="Update Stock", command=update_stock).pack(pady=10)
+    tk.Button(dash, text="View Orders", command=view_orders).pack(pady=10)
 
 # ---------------- BUTTONS ----------------
-tk.Button(card, text="Customer", width=20,
-          bg="#4CAF50", fg="white",
-          command=open_customer).pack(pady=10)
+tk.Button(card, text="Customer", bg="#4CAF50", fg="white",
+          width=20, command=open_login).pack(pady=10)
 
-tk.Button(card, text="Producer", width=20,
-          bg="#1976D2", fg="white",
-          command=open_producer).pack()
+tk.Button(card, text="Producer", bg="#1976D2", fg="white",
+          width=20, command=open_producer_dashboard).pack()
 
-# ---------------- FOOTER ----------------
-tk.Label(root,
-         text="Supporting Local Farmers & Producers",
-         bg="#e8f5e9").pack(side="bottom", pady=10)
-
-# ---------------- RUN ----------------
 root.mainloop()
-
-
-
-Version 4(Producer Dashboard)
-def open_producer_dashboard():
-    p_win = tk.Toplevel(root)
-    p_win.title("Producer Management")
-    p_win.geometry("850x550")
-
-    # Sidebar
-    sidebar = tk.Frame(p_win, bg="#1b5e20", width=180) # Darker green sidebar
-    sidebar.pack(side="left", fill="y")
-    
-    # Main Content Area
-    container = tk.Frame(p_win, bg="white")
-    container.pack(side="right", fill="both", expand=True)
-
-    def clear_view():
-        for widget in container.winfo_children():
-            widget.destroy()
-
-    # 1. VIEW PRODUCTS
-    def view_products():
-        clear_view()
-        tk.Label(container, text="Current Inventory", font=("Arial", 16, "bold"), fg="#2e7d32", bg="white").pack(pady=10)
-        
-        tree = ttk.Treeview(container, columns=("ID", "Name", "Price", "Stock"), show="headings")
-        tree.heading("ID", text="ID")
-        tree.heading("Name", text="Product")
-        tree.heading("Price", text="Price (£)")
-        tree.heading("Stock", text="Current Stock")
-        tree.pack(fill="both", expand=True, padx=20, pady=10)
-
-        cursor.execute("SELECT id, name, price, stock FROM products")
-        for row in cursor.fetchall():
-            tree.insert("", "end", values=row)
-
-    # 2. UPDATE INVENTORY (Name, Quantity, and Price)
-    def update_inventory_ui():
-        clear_view()
-        tk.Label(container, text="Update Inventory", font=("Arial", 16, "bold"), fg="#2e7d32", bg="white").pack(pady=20)
-        
-        # Product Name
-        tk.Label(container, text="Product Name:", bg="white").pack()
-        name_entry = tk.Entry(container, width=35)
-        name_entry.pack(pady=5)
-
-        # Quantity
-        tk.Label(container, text="Quantity in Stock:", bg="white").pack()
-        stock_entry = tk.Entry(container, width=35)
-        stock_entry.pack(pady=5)
-
-        # Price
-        tk.Label(container, text="Price per Unit (£):", bg="white").pack()
-        price_entry = tk.Entry(container, width=35)
-        price_entry.pack(pady=5)
-
-        def save_changes():
-            try:
-                name = name_entry.get().strip()
-                qty = int(stock_entry.get())
-                price = float(price_entry.get())
-                
-                # Check if product exists first
-                cursor.execute("SELECT * FROM products WHERE name=?", (name,))
-                if cursor.fetchone():
-                    cursor.execute("UPDATE products SET stock=?, price=? WHERE name=?", (qty, price, name))
-                    messagebox.showinfo("Success", f"Updated {name} successfully.")
-                else:
-                    # Optional: Add as new product if it doesn't exist
-                    cursor.execute("INSERT INTO products (name, price, stock) VALUES (?, ?, ?)", (name, price, qty))
-                    messagebox.showinfo("Success", f"Added {name} as a new product.")
-                
-                conn.commit()
-                view_products()
-            except ValueError:
-                messagebox.showerror("Error", "Please enter valid numbers for Stock and Price.")
-
-        # Updated Green Button
-        tk.Button(container, text="Save Inventory Changes", bg="#4CAF50", fg="white", 
-                  font=("Arial", 10, "bold"), command=save_changes, width=25, height=2).pack(pady=20)
-
-    # 3. VIEW ORDERS
-    def view_orders():
-        clear_view()
-        tk.Label(container, text="Customer Orders", font=("Arial", 16, "bold"), fg="#2e7d32", bg="white").pack(pady=10)
-        
-        tree = ttk.Treeview(container, columns=("Email", "Items", "Total"), show="headings")
-        tree.heading("Email", text="Customer Email")
-        tree.heading("Items", text="Items Purchased")
-        tree.heading("Total", text="Total (£)")
-        tree.pack(fill="both", expand=True, padx=20, pady=10)
-
-        cursor.execute("SELECT user_email, items, total FROM orders")
-        for row in cursor.fetchall():
-            tree.insert("", "end", values=row)
-
-    # SIDEBAR BUTTONS
-    tk.Label(sidebar, text="DASHBOARD", fg="white", bg="#1b5e20", font=("Arial", 12, "bold")).pack(pady=20)
-    
-    btn_opts = {"bg": "#2e7d32", "fg": "white", "bd": 0, "pady": 12, "width": 20, "font": ("Arial", 10)}
-    tk.Button(sidebar, text="View Products", command=view_products, **btn_opts).pack(pady=2)
-    tk.Button(sidebar, text="Update Inventory", command=update_inventory_ui, **btn_opts).pack(pady=2)
-    tk.Button(sidebar, text="View Orders", command=view_orders, **btn_opts).pack(pady=2)
-
-    view_products()
